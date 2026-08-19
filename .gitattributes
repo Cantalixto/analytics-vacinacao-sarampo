@@ -1,5 +1,6 @@
-# Forçar a detecção de scripts na pasta SQL
-sql/*.sql linguist-detectable=true
+# Oculta o script Python da contagem de linguagens
+carregar_dados.py linguist-vendored
 
-# Marcar o script de carga em Python como código utilitário/suporte
-carregar_dados.py linguist-vendored=true
+# Força o GitHub a classificar os arquivos SQL como código do projeto
+*.sql linguist-detectable=true
+*.sql linguist-documentation=false
