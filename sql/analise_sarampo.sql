@@ -11,6 +11,7 @@
 -- Tratamento aplicado: Teto de 100% para coberturas inconsistentes
 --                      e remoção de inconsistências de registro.
 -- ============================================================
+CREATE VIEW IF NOT EXISTS vw_bloco1_brasil_historico AS
 SELECT 
     ano,
     -- Média da D1 com teto em 100%
@@ -39,6 +40,7 @@ ORDER BY ano ASC;
 --                      de cobertura vacinal média nos anos recentes?
 -- Meta do Ministério da Saúde: >= 95%
 -- ============================================================
+CREATE VIEW IF NOT EXISTS vw_bloco2_ranking_ufs AS
 SELECT 
     v.sigla_uf,
     ROUND(AVG(
@@ -64,6 +66,7 @@ ORDER BY media_d1_tratada ASC;
 -- Pergunta de Negócio: Qual é a causa-raiz da baixa cobertura em cada cidade?
 --                      (Falha de Acesso, Alto Abandono da 2ª Dose ou Risco Duplo)
 -- ============================================================
+CREATE VIEW IF NOT EXISTS vw_bloco3_diagnostico_sp AS
 SELECT 
     m.nome AS municipio,
     
@@ -110,6 +113,7 @@ ORDER BY media_d1 ASC;
 -- Pergunta de Negócio: Quais municípios de SP mantiveram cobertura 
 --                      crítica (< 70%) em 3 ou mais anos do período?
 -- ============================================================
+CREATE VIEW IF NOT EXISTS vw_bloco4_risco_persistente_sp AS
 SELECT 
     m.nome AS municipio,
     
