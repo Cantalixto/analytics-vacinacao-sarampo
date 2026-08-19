@@ -58,3 +58,83 @@ WHERE v.ano >= 2018
   AND v.cobertura_triplice_viral_d1 IS NOT NULL
 GROUP BY v.sigla_uf
 ORDER BY media_d1_tratada ASC;
+
+-- ============================================================
+-- 3. MATRIZ DE DIAGNÓSTICO TÁTICO DOS MUNICÍPIOS DE SP (2018 - 2021)
+-- Pergunta de Negócio: Qual é a causa-raiz da baixa cobertura em cada cidade?
+--                      (Falha de Acesso, Alto Abandono da 2ª Dose ou Risco Duplo)
+-- ============================================================
+SELECT 
+    m.nome AS municipio,
+    
+    -- Coluna 2: Média D1 tratada
+    ROUND(AVG(
+        CASE 
+            WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 
+            ELSE v.cobertura_triplice_viral_d1 
+        END
+    ), 2) AS media_d1,
+    
+    -- Coluna 3: Média D2 tratada
+    ROUND(AVG(
+        CASE 
+            WHEN v.cobertura_triplice_viral_d2 > 100 THEN 100.0 
+            ELSE v.cobertura_triplice_viral_d2 
+        END
+    ), 2) AS media_d2,
+    
+    -- Coluna 4: Diagnóstico de Risco
+    CASE 
+        WHEN ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d1 END), 2) < 70 
+         AND (ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d1 END), 2) - ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d2 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d2 END), 2)) > 15
+        THEN 'Risco Duplo'
+        
+        WHEN ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d1 END), 2) < 70 
+        THEN 'Falha de Acesso'
+        
+        WHEN (ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d1 END), 2) - ROUND(AVG(CASE WHEN v.cobertura_triplice_viral_d2 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d2 END), 2)) > 15
+        THEN 'Alto Abandono (Falha de Retorno)'
+        
+        ELSE 'Alerta / Inadequado'
+    END AS classificacao_risco
+
+FROM vacinacao v
+JOIN municipios m ON v.id_municipio = m.id_municipio
+WHERE v.sigla_uf = 'SP'
+  AND v.ano >= 2018
+  AND v.cobertura_triplice_viral_d1 IS NOT NULL
+GROUP BY m.nome
+ORDER BY media_d1 ASC;
+-- ============================================================
+-- 4. MAPEAMENTO DE RISCO PERSISTENTE EM SP (2018 - 2021)
+-- Pergunta de Negócio: Quais municípios de SP mantiveram cobertura 
+--                      crítica (< 70%) em 3 ou mais anos do período?
+-- ============================================================
+SELECT 
+    m.nome AS municipio,
+    
+    -- Contagem de anos em que a D1 ficou abaixo de 70%
+    SUM(
+        CASE 
+            WHEN (CASE WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 ELSE v.cobertura_triplice_viral_d1 END) < 70 
+            THEN 1 
+            ELSE 0 
+        END
+    ) AS qtd_anos_criticos,
+    
+    -- Média histórica da D1 no período para conferência
+    ROUND(AVG(
+        CASE 
+            WHEN v.cobertura_triplice_viral_d1 > 100 THEN 100.0 
+            ELSE v.cobertura_triplice_viral_d1 
+        END
+    ), 2) AS media_d1_periodo
+
+FROM vacinacao v
+JOIN municipios m ON v.id_municipio = m.id_municipio
+WHERE v.sigla_uf = 'SP'
+  AND v.ano >= 2018
+  AND v.cobertura_triplice_viral_d1 IS NOT NULL
+GROUP BY m.nome
+HAVING qtd_anos_criticos >= 3
+ORDER BY qtd_anos_criticos DESC, media_d1_periodo ASC;
