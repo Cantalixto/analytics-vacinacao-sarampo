@@ -1,0 +1,5 @@
+# Forçar a detecção de scripts na pasta SQL
+sql/*.sql linguist-detectable=true
+
+# Marcar o script de carga em Python como código utilitário/suporte
+carregar_dados.py linguist-vendored=true
